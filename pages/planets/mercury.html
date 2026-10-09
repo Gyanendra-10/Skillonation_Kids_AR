@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+<style>
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+#ar-scene {
+  width: 100%;
+  height: 100%;
+}
+
+.ui-button {
+  position: absolute;
+  z-index: 100;
+  padding: 12px 18px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(0,0,0,.8);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.ui-button:hover {
+  background: rgba(0,0,0,.95);
+}
+
+#knowMoreBtn{
+  top:20px;
+  left:20px;
+}
+
+#backBtn{
+  top:20px;
+  right:20px;
+}
+
+#rotateBtn{
+  bottom:25px;
+  left:50%;
+  transform:translateX(-50%);
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<button id="knowMoreBtn" class="ui-button">
+Know More
+</button>
+
+<button id="backBtn" class="ui-button">
+← Back
+</button>
+
+<button id="rotateBtn" class="ui-button">
+Rotate mercury
+</button>
+
+<a-scene
+id="ar-scene"
+mindar-image="
+imageTargetSrc: ../../mind/planet/mercury.mind;
+autoStart: true;
+filterMinCF: 0.0001;
+filterBeta: 0.001;
+warmupTolerance: 5;
+missTolerance: 8;
+"
+color-space="sRGB"
+renderer="colorManagement: true; physicallyCorrectLights: true"
+vr-mode-ui="enabled:false"
+device-orientation-permission-ui="enabled:false"
+>
+
+<a-assets>
+
+<a-asset-item
+id="mercuryModel"
+src="../../model/Mercury.glb">
+</a-asset-item>
+
+</a-assets>
+
+<a-camera
+position="0 0 0"
+look-controls="enabled:false">
+</a-camera>
+
+<a-entity
+id="target"
+mindar-image-target="targetIndex:0">
+
+<a-entity id="smoothContainer">
+
+<a-gltf-model
+id="mercury"
+src="#mercuryModel"
+position="0 0 0"
+rotation="0 0 0"
+scale="0.5 0.5 0.5">
+</a-gltf-model>
+
+</a-entity>
+
+</a-entity>
+
+</a-scene>
+
+<script>
+
+document.addEventListener("DOMContentLoaded",()=>{
+
+const target=document.querySelector("#target");
+const smoothContainer=document.querySelector("#smoothContainer");
+const mercury=document.querySelector("#mercury");
+
+const rotateBtn=document.querySelector("#rotateBtn");
+const knowMoreBtn=document.querySelector("#knowMoreBtn");
+const backBtn=document.querySelector("#backBtn");
+
+let targetVisible=false;
+let rotateMercury=false;
+
+target.addEventListener("targetFound",()=>{
+targetVisible=true;
+rotateBtn.style.display="block";
+});
+
+target.addEventListener("targetLost",()=>{
+targetVisible=false;
+rotateBtn.style.display="none";
+});
+
+const smoothFactor=.15;
+
+function animate(){
+
+if(targetVisible){
+
+smoothContainer.object3D.position.lerp(
+target.object3D.position,
+smoothFactor
+);
+
+smoothContainer.object3D.quaternion.slerp(
+target.object3D.quaternion,
+smoothFactor
+);
+
+smoothContainer.object3D.scale.lerp(
+target.object3D.scale,
+smoothFactor
+);
+
+
+}
+
+if(rotateMercury){
+mercury.object3D.rotation.y += 0.005;
+}
+
+requestAnimationFrame(animate);
+
+}
+
+animate();
+
+rotateBtn.addEventListener("click",()=>{
+
+rotateMercury=!rotateMercury;
+
+if(rotateMercury){
+rotateBtn.innerText="Stop Rotation";
+}else{
+rotateBtn.innerText="Rotate mercury";
+}
+
+});
+
+knowMoreBtn.addEventListener("click",()=>{
+
+window.open(
+"https://science.nasa.gov/mercury/facts/",
+"_blank"
+);
+
+});
+
+backBtn.addEventListener("click",()=>{
+
+window.location.href="../planets.html";
+
+});
+
+});
+
+</script>
+
+</body>
+</html>

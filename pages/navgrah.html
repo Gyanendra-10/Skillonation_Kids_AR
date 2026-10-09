@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navgrah Menu</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #a5b4fc;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #818cf8;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        /* Fullscreen responsive video background (fills and stretches to screen) */
+        .background-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: fill;
+            object-position: center center;
+            z-index: 1;
+            pointer-events: none;
+            display: block;
+        }
+    </style>
+</head>
+
+<body class="flex justify-center items-center min-h-screen relative">
+
+    <!-- Background Video (.mp4) -->
+    <video
+        id="bgVideo"
+        class="background-video"
+        autoplay
+        muted
+        loop
+        playsinline
+        webkit-playsinline
+        preload="auto">
+        <source src="../ui/navgrah.mp4" type="video/mp4" />
+        Your browser does not support HTML5 video.
+    </video>
+
+    <!-- Back Button -->
+    <a href="categories.html"
+       class="fixed top-6 left-6 z-20 bg-gray-800/80 backdrop-blur-md text-white font-semibold py-2 px-4 rounded-xl shadow-md transform transition-all duration-200 ease-in-out hover:bg-indigo-500 hover:text-white active:scale-95">
+        ← Back
+    </a>
+
+    <!-- Menu Card Container -->
+    <div class="relative z-10 w-full max-w-xs sm:max-w-sm px-4">
+        <div id="menu-container" class="max-h-96 overflow-y-auto custom-scrollbar pr-2">
+            <ul class="space-y-4"></ul>
+        </div>
+    </div>
+
+<script>
+// --- 1. Autoplay Enforcer ---
+document.addEventListener("DOMContentLoaded", function () {
+    const video = document.getElementById("bgVideo");
+    if (video) {
+        video.muted = true;
+        video.defaultMuted = true;
+        video.loop = true;
+        video.playsInline = true;
+
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(function (error) {
+                console.warn("Autoplay deferred until user interaction:", error);
+                const unlockPlay = function () {
+                    video.play();
+                    document.removeEventListener("click", unlockPlay);
+                    document.removeEventListener("touchstart", unlockPlay);
+                };
+                document.addEventListener("click", unlockPlay, { once: true });
+                document.addEventListener("touchstart", unlockPlay, { once: true });
+            });
+        }
+    }
+});
+
+// --- 2. Navgrah Menu Items ---
+const planets = [
+    { name: "Surya (सूर्य)", file: "surya" },
+    { name: "Chandra (चंद्र)", file: "chandra" },
+    { name: "Mangal (मंगल)", file: "mangal" },
+    { name: "Budh (बुध)", file: "budh" },
+    { name: "Guru (गुरु)", file: "guru" },
+    { name: "Shukra (शुक्र)", file: "shukra" },
+    { name: "Shani (शनि)", file: "shani" },
+    { name: "Rahu (राहु)", file: "rahu" },
+    { name: "Ketu (केतु)", file: "ketu" }
+];
+
+// Sort alphabetically by display name
+planets.sort((a, b) => a.name.localeCompare(b.name));
+
+const menuList = document.querySelector('#menu-container ul');
+
+function createMenuItems() {
+    planets.forEach(item => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+
+        a.textContent = item.name;
+        a.href = `navgrah/${item.file}.html`;
+        a.className =
+            "block w-full text-center py-3.5 px-5 bg-indigo-500 text-white font-semibold rounded-xl shadow-md transform transition-all duration-200 ease-in-out hover:bg-indigo-600 hover:shadow-lg active:scale-95";
+
+        li.appendChild(a);
+        menuList.appendChild(li);
+    });
+}
+
+createMenuItems();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skillonation Kids AR</title>
+
+  <style>
+    /* =================================
+       BASIC PAGE SETUP
+    ================================= */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: #000;
+    }
+
+    /* =================================
+       VIDEO BACKGROUND (SQUEEZE / STRETCH TO FIT FULL SCREEN)
+    ================================= */
+    .background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      /* 'fill' squeezes and stretches so the entire video fits 100% without cropping */
+      object-fit: fill;
+      object-position: center center;
+      z-index: 1;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* =================================
+       OPTIONAL VIDEO OVERLAY
+    ================================= */
+    .video-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* =================================
+       START BUTTON
+    ================================= */
+    .start-btn {
+      position: absolute;
+      bottom: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.2s ease;
+    }
+
+    .start-btn img {
+      width: 200px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .start-btn:hover img {
+      transform: scale(1.06);
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+    }
+
+    .start-btn:active img {
+      transform: scale(0.97);
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+    }
+
+    /* =================================
+       SKILLONATION LOGO
+    ================================= */
+    .skillonation {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 200px;
+      height: auto;
+      opacity: 0.9;
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    .skillonation:hover {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+
+    /* =================================
+       MOBILE
+    ================================= */
+    @media (max-width: 480px) {
+      .start-btn {
+        bottom: 120px;
+      }
+
+      .start-btn img {
+        width: 120px;
+      }
+
+      .skillonation {
+        width: 80px;
+        bottom: 15px;
+        left: 15px;
+      }
+    }
+
+    /* =================================
+       TABLET
+    ================================= */
+    @media (min-width: 481px) and (max-width: 1024px) {
+      .start-btn {
+        bottom: 150px;
+      }
+
+      .start-btn img {
+        width: 160px;
+      }
+
+      .skillonation {
+        width: 140px;
+        bottom: 20px;
+        left: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- =================================
+       ANIMATED VIDEO BACKGROUND
+  ================================= -->
+  <video
+    id="bgVideo"
+    class="background-video"
+    autoplay
+    muted
+    loop
+    playsinline
+    webkit-playsinline
+    preload="auto">
+    <source src="ui/mainmenu.mp4" type="video/mp4" />
+    Your browser does not support HTML5 video.
+  </video>
+
+  <!-- =================================
+       OPTIONAL VIDEO OVERLAY
+  ================================= -->
+  <div class="video-overlay"></div>
+
+  <!-- =================================
+       START BUTTON
+  ================================= -->
+  <button
+    class="start-btn"
+    type="button"
+    onclick="location.href='pages/categories.html'">
+    <img
+      src="ui/start_button.webp"
+      alt="Start" />
+  </button>
+
+  <!-- =================================
+       SKILLONATION LOGO
+  ================================= -->
+  <a
+    href="https://www.skillonationkids.com/"
+    target="_blank"
+    rel="noopener noreferrer">
+    <img
+      class="skillonation"
+      src="ui/logo.webp"
+      alt="Skillonation Logo" />
+  </a>
+
+  <!-- =================================
+       GUARANTEED AUTOPLAY SCRIPT
+  ================================= -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const video = document.getElementById("bgVideo");
+
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+
+      const playPromise = video.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch(function (error) {
+          console.warn("Autoplay deferred until first user interaction:", error);
+
+          const unlockPlay = function () {
+            video.play();
+            document.removeEventListener("click", unlockPlay);
+            document.removeEventListener("touchstart", unlockPlay);
+          };
+
+          document.addEventListener("click", unlockPlay, { once: true });
+          document.addEventListener("touchstart", unlockPlay, { once: true });
+        });
+      }
+    });
+  </script>
+
+</body>
+</html>

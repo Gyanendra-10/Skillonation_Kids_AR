@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skillonation Kids AR</title>
+
+  <style>
+    /* =================================
+       BASIC PAGE SETUP
+    ================================= */
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: sans-serif;
+      background: #000;
+    }
+
+    /* =================================
+       VIDEO BACKGROUND
+    ================================= */
+    .background-video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: fill;
+      object-position: center center;
+      z-index: 1;
+      pointer-events: none;
+      display: block;
+    }
+
+    /* =================================
+       VIDEO OVERLAY
+    ================================= */
+    .video-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: transparent;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* =================================
+       AUDIO TOGGLE BUTTON
+    ================================= */
+    .audio-btn {
+      position: absolute;
+      top: 24px;
+      left: 24px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      cursor: pointer;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      outline: none;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .audio-btn svg {
+      width: 24px;
+      height: 24px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .audio-btn:hover {
+      background: rgba(255, 255, 255, 0.28);
+      transform: scale(1.08);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+
+    .audio-btn:active {
+      transform: scale(0.92);
+      background: rgba(255, 255, 255, 0.4);
+    }
+
+    /* Audio enabled state */
+    .audio-btn.is-playing {
+      background: rgba(0, 220, 130, 0.22);
+      border-color: rgba(0, 255, 150, 0.6);
+      box-shadow: 0 0 16px rgba(0, 255, 150, 0.45);
+      animation: soundPulse 2s infinite ease-in-out;
+    }
+
+    .audio-btn.is-playing svg {
+      stroke: #52ffb8;
+    }
+
+    @keyframes soundPulse {
+      0%, 100% {
+        box-shadow: 0 0 10px rgba(0, 255, 150, 0.35);
+      }
+      50% {
+        box-shadow: 0 0 22px rgba(0, 255, 150, 0.7);
+      }
+    }
+
+    /* =================================
+       START BUTTON
+    ================================= */
+    .start-btn {
+      position: absolute;
+      bottom: 400px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.2s ease;
+    }
+
+    .start-btn img {
+      width: 400px;
+      height: auto;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+
+    .start-btn:hover img {
+      transform: scale(1.06);
+      filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.6));
+    }
+
+    .start-btn:active img {
+      transform: scale(0.97);
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.4));
+    }
+
+    /* =================================
+       SKILLONATION LOGO
+    ================================= */
+    .skillonation {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 400px;
+      height: auto;
+      opacity: 0.9;
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    }
+
+    .skillonation:hover {
+      transform: scale(1.05);
+      opacity: 1;
+    }
+
+    /* =================================
+       MOBILE RESPONSIVENESS
+    ================================= */
+    @media (max-width: 480px) {
+      .audio-btn {
+        top: 16px;
+        left: 16px;
+        width: 42px;
+        height: 42px;
+      }
+
+      .audio-btn svg {
+        width: 20px;
+        height: 20px;
+      }
+
+      .start-btn {
+        bottom: 120px;
+      }
+
+      .start-btn img {
+        width: 120px;
+      }
+
+      .skillonation {
+        width: 120px;
+        bottom: 15px;
+        left: 15px;
+      }
+    }
+
+    /* =================================
+       TABLET RESPONSIVENESS
+    ================================= */
+    @media (min-width: 481px) and (max-width: 1024px) {
+      .audio-btn {
+        top: 20px;
+        left: 20px;
+      }
+
+      .start-btn {
+        bottom: 150px;
+      }
+
+      .start-btn img {
+        width: 160px;
+      }
+
+      .skillonation {
+        width: 140px;
+        bottom: 20px;
+        left: 20px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- AUDIO TOGGLE BUTTON -->
+  <button
+    id="audioToggle"
+    class="audio-btn"
+    type="button"
+    aria-label="Enable Audio">
+
+    <!-- Muted icon -->
+    <svg id="iconMuted" viewBox="0 0 24 24">
+      <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+      <line x1="23" y1="9" x2="17" y2="15"></line>
+      <line x1="17" y1="9" x2="23" y2="15"></line>
+    </svg>
+
+    <!-- Audio playing icon -->
+    <svg
+      id="iconPlaying"
+      viewBox="0 0 24 24"
+      style="display: none;">
+
+      <path d="M11 5L6 9H2v6h4l5 4V5z"></path>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+    </svg>
+  </button>
+
+  <!-- BACKGROUND VIDEO -->
+  <video
+    id="bgVideo"
+    class="background-video"
+    poster="ui/welcome_poster.webp"
+    autoplay
+    muted
+    loop
+    playsinline
+    webkit-playsinline
+    preload="auto">
+
+    <source src="ui/welcome.mp4" type="video/mp4" />
+
+    Your browser does not support HTML5 video.
+  </video>
+
+  <!-- OPTIONAL VIDEO OVERLAY -->
+  <div class="video-overlay"></div>
+
+  <!-- START BUTTON -->
+  <button
+    class="start-btn"
+    type="button"
+    onclick="location.href='pages/categories.html'">
+
+    <img
+      src="ui/start_button.webp"
+      alt="Start" />
+  </button>
+
+  <!-- SKILLONATION LOGO -->
+  <a
+    href="https://www.skillonationkids.com/"
+    target="_blank"
+    rel="noopener noreferrer">
+
+    <img
+      class="skillonation"
+      src="ui/logo.webp"
+      alt="Skillonation Logo" />
+  </a>
+
+  <!-- AUDIO AND AUTOPLAY CONTROLS -->
+  <script>
+    (function () {
+      const video = document.getElementById("bgVideo");
+      const audioBtn = document.getElementById("audioToggle");
+      const iconMuted = document.getElementById("iconMuted");
+      const iconPlaying = document.getElementById("iconPlaying");
+
+      // Set autoplay-compatible properties before any play attempt
+      video.muted = true;
+      video.defaultMuted = true;
+      video.loop = true;
+      video.playsInline = true;
+      video.volume = 1;
+
+      video.setAttribute("muted", "");
+      video.setAttribute("autoplay", "");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("webkit-playsinline", "");
+
+      // Safe play helper: never throws, only plays if currently paused
+      function startVideo() {
+        if (!video.paused) return;
+        const p = video.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+
+      // Try immediately, then at every stage of loading
+      startVideo();
+
+      ["loadedmetadata", "loadeddata", "canplay", "canplaythrough"].forEach(function (ev) {
+        video.addEventListener(ev, startVideo);
+      });
+
+      window.addEventListener("load", startVideo);
+      window.addEventListener("pageshow", startVideo);
+
+      // Retry when the page returns to the foreground
+      document.addEventListener("visibilitychange", function () {
+        if (!document.hidden) startVideo();
+      });
+
+      // Fallback: if the browser still blocked autoplay,
+      // start the video on the first interaction of any kind
+      ["touchstart", "pointerdown", "click", "scroll", "keydown"].forEach(function (ev) {
+        window.addEventListener(ev, startVideo, { once: true, passive: true });
+      });
+
+      // Keep retrying briefly in case the browser allows it a moment later
+      let tries = 0;
+      const retryTimer = setInterval(function () {
+        if (!video.paused || ++tries > 20) {
+          clearInterval(retryTimer);
+          return;
+        }
+        startVideo();
+      }, 500);
+
+      // Update the audio button UI
+      function updateButtonUI() {
+        const soundOn = !video.muted;
+        audioBtn.classList.toggle("is-playing", soundOn);
+        iconMuted.style.display = soundOn ? "none" : "block";
+        iconPlaying.style.display = soundOn ? "block" : "none";
+        audioBtn.setAttribute("aria-label", soundOn ? "Mute Audio" : "Enable Audio");
+      }
+
+      // Toggle audio on user interaction
+      audioBtn.addEventListener("click", async function (event) {
+        event.stopPropagation();
+
+        video.muted = !video.muted;
+
+        if (!video.muted) {
+          video.volume = 1;
+          try {
+            await video.play();
+          } catch (error) {
+            video.muted = true;
+            console.warn("Audio playback failed:", error);
+          }
+        }
+
+        updateButtonUI();
+      });
+
+      updateButtonUI();
+    })();
+  </script>
+
+</body>
+</html>
