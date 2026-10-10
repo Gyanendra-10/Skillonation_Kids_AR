@@ -4,11 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
-  <!-- Eruda Mobile Console: Tap the icon at the bottom-right on your phone to check for errors -->
+  <!-- Debugger: Use to view errors if needed -->
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>eruda.init();</script>
 
-  <!-- FIXED: A-Frame 1.4.2 is required for MindAR 1.2.5 -->
+  <!-- Stable pairing: A-Frame 1.4.2 + MindAR 1.2.5 -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
@@ -32,19 +32,27 @@
       padding: 12px 18px;
       border: none;
       border-radius: 10px;
-      background: rgba(0,0,0,.8);
+      background: rgba(0, 0, 0, 0.8);
       color: white;
       font-size: 14px;
       cursor: pointer;
-      transition: .2s;
+      transition: 0.2s;
     }
 
     .ui-button:hover {
-      background: rgba(0,0,0,.95);
+      background: rgba(0, 0, 0, 0.95);
     }
 
-    #knowMoreBtn { top: 20px; left: 20px; }
-    #backBtn { top: 20px; right: 20px; }
+    #knowMoreBtn {
+      top: 20px;
+      left: 20px;
+    }
+
+    #backBtn {
+      top: 20px;
+      right: 20px;
+    }
+
     #rotateBtn {
       bottom: 25px;
       left: 50%;
@@ -62,9 +70,16 @@
 
   <a-scene
     id="ar-scene"
-    mindar-image="imageTargetSrc: ../../mind/planet/earth.mind; autoStart: true; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 8;"
+    mindar-image="
+      imageTargetSrc: ../../mind/planet/earth.mind?t=1710000000;
+      autoStart: true;
+      filterMinCF: 0.0001;
+      filterBeta: 0.001;
+      warmupTolerance: 5;
+      missTolerance: 8;
+    "
     color-space="sRGB"
-    renderer="colorManagement: true, physicallyCorrectLights"
+    renderer="colorManagement: true; physicallyCorrectLights: true"
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     embedded
@@ -93,6 +108,7 @@
       const target = document.querySelector("#target");
       const smoothContainer = document.querySelector("#smoothContainer");
       const earth = document.querySelector("#earth");
+
       const rotateBtn = document.querySelector("#rotateBtn");
       const knowMoreBtn = document.querySelector("#knowMoreBtn");
       const backBtn = document.querySelector("#backBtn");
