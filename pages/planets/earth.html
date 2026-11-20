@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
 
-  <!-- Debugger: Use to view errors if needed -->
+  <!-- Debugger: Use to view errors if needed (remove for production) -->
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>eruda.init();</script>
 
@@ -19,6 +19,7 @@
       height: 100%;
       overflow: hidden;
       font-family: Arial, sans-serif;
+      /* No background here: MindAR's camera video sits behind the page */
     }
 
     #ar-scene {
@@ -43,15 +44,8 @@
       background: rgba(0, 0, 0, 0.95);
     }
 
-    #knowMoreBtn {
-      top: 20px;
-      left: 20px;
-    }
-
-    #backBtn {
-      top: 20px;
-      right: 20px;
-    }
+    #knowMoreBtn { top: 20px; left: 20px; }
+    #backBtn     { top: 20px; right: 20px; }
 
     #rotateBtn {
       bottom: 25px;
@@ -59,25 +53,54 @@
       transform: translateX(-50%);
       display: none;
     }
+
+    /* iOS FIX: full-screen tap-to-start overlay */
+    #startOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: #000;
+      color: #fff;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    #startBtn {
+      padding: 16px 32px;
+      border: none;
+      border-radius: 30px;
+      background: #fff;
+      color: #000;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #startMsg { font-size: 13px; opacity: 0.8; max-width: 320px; }
   </style>
 </head>
 
 <body>
 
+  <!-- iOS FIX: camera must be started from a user tap -->
+  <div id="startOverlay">
+    <button id="startBtn">Start AR</button>
+    <div id="startMsg">Point your camera at the Earth image</div>
+  </div>
+
   <button id="knowMoreBtn" class="ui-button">Know More</button>
   <button id="backBtn" class="ui-button">← Back</button>
   <button id="rotateBtn" class="ui-button">Rotate Earth</button>
 
+  <!-- iOS FIX: autoStart is now false -->
   <a-scene
     id="ar-scene"
-    mindar-image="
-      imageTargetSrc: ../../mind/planet/earth.mind?t=1710000000;
-      autoStart: true;
-      filterMinCF: 0.0001;
-      filterBeta: 0.001;
-      warmupTolerance: 5;
-      missTolerance: 8;
-    "
+    mindar-image="imageTargetSrc: ../../mind/planet/earth.mind?t=1710000000; autoStart: false; filterMinCF: 0.0001; filterBeta: 0.001; warmupTolerance: 5; missTolerance: 8"
     color-space="sRGB"
     renderer="colorManagement: true; physicallyCorrectLights: true"
     vr-mode-ui="enabled: false"
@@ -90,21 +113,24 @@
 
     <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-    <a-entity id="target" mindar-image-target="targetIndex: 0">
-      <a-entity id="smoothContainer">
-        <a-gltf-model
-          id="earth"
-          src="#earthModel"
-          position="0 0 0"
-          rotation="0 0 0"
-          scale="0.5 0.5 0.5"
-        ></a-gltf-model>
-      </a-entity>
+    <!-- Target stays empty; MindAR writes its pose here -->
+    <a-entity id="target" mindar-image-target="targetIndex: 0"></a-entity>
+
+    <!-- Container lives at scene root and follows the target's world pose -->
+    <a-entity id="smoothContainer" visible="false">
+      <a-gltf-model
+        id="earth"
+        src="#earthModel"
+        position="0 0 0"
+        rotation="0 0 0"
+        scale="0.5 0.5 0.5"
+      ></a-gltf-model>
     </a-entity>
   </a-scene>
 
   <script>
     document.addEventListener("DOMContentLoaded", () => {
+      const sceneEl = document.querySelector("a-scene");
       const target = document.querySelector("#target");
       const smoothContainer = document.querySelector("#smoothContainer");
       const earth = document.querySelector("#earth");
@@ -113,26 +139,122 @@
       const knowMoreBtn = document.querySelector("#knowMoreBtn");
       const backBtn = document.querySelector("#backBtn");
 
+      const startOverlay = document.querySelector("#startOverlay");
+      const startBtn = document.querySelector("#startBtn");
+      const startMsg = document.querySelector("#startMsg");
+
       let targetVisible = false;
       let rotateEarth = false;
+      let firstFrame = true;
 
+      // ---------- iOS camera start ----------
+      function explainError(err) {
+        const name = (err && err.name) || "";
+        if (!window.isSecureContext || !navigator.mediaDevices) {
+          return "Camera needs HTTPS. Open this page with an https:// link.";
+        }
+        if (name === "NotAllowedError") {
+          return "Camera permission was denied. Enable it in Settings > Safari > Camera, then reload.";
+        }
+        if (name === "NotReadableError") {
+          return "Camera is in use by another app. Close it and try again.";
+        }
+        if (name === "OverconstrainedError") {
+          return "Rear camera not available on this device.";
+        }
+        return "Could not start camera: " + (err && err.message ? err.message : err);
+      }
+
+      async function startAR() {
+        startBtn.disabled = true;
+        startBtn.innerText = "Starting...";
+        startMsg.innerText = "Allow camera access when asked";
+
+        if (!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          startBtn.disabled = false;
+          startBtn.innerText = "Try Again";
+          startMsg.innerText = explainError(null) +
+            " If you opened this from WhatsApp/Instagram, open it in Safari instead.";
+          return;
+        }
+
+        try {
+          const arSystem = sceneEl.systems["mindar-image-system"];
+          await arSystem.start();
+
+          // Safety net for iOS: make sure the camera <video> is inline + playing
+          const video = document.querySelector("video");
+          if (video) {
+            video.setAttribute("playsinline", "");
+            video.setAttribute("webkit-playsinline", "");
+            video.muted = true;
+            video.play().catch(() => {});
+          }
+
+          startOverlay.remove();
+        } catch (err) {
+          console.error("AR start failed:", err);
+          startBtn.disabled = false;
+          startBtn.innerText = "Try Again";
+          startMsg.innerText = explainError(err);
+        }
+      }
+
+      if (sceneEl.hasLoaded) {
+        startBtn.addEventListener("click", startAR);
+      } else {
+        startBtn.disabled = true;
+        startBtn.innerText = "Loading...";
+        sceneEl.addEventListener("loaded", () => {
+          startBtn.disabled = false;
+          startBtn.innerText = "Start AR";
+          startBtn.addEventListener("click", startAR);
+        });
+      }
+
+      // Release the camera when leaving the page
+      window.addEventListener("pagehide", () => {
+        const arSystem = sceneEl.systems["mindar-image-system"];
+        if (arSystem) arSystem.stop();
+      });
+
+      // ---------- Target events ----------
       target.addEventListener("targetFound", () => {
         targetVisible = true;
+        firstFrame = true;
+        smoothContainer.setAttribute("visible", true);
         rotateBtn.style.display = "block";
       });
 
       target.addEventListener("targetLost", () => {
         targetVisible = false;
+        smoothContainer.setAttribute("visible", false);
         rotateBtn.style.display = "none";
       });
 
+      // ---------- Smoothing (reads target's WORLD matrix) ----------
       const smoothFactor = 0.15;
+      const tPos = new THREE.Vector3();
+      const tQuat = new THREE.Quaternion();
+      const tScale = new THREE.Vector3();
 
       function animate() {
-        if (targetVisible && smoothContainer.object3D && target.object3D) {
-          smoothContainer.object3D.position.lerp(target.object3D.position, smoothFactor);
-          smoothContainer.object3D.quaternion.slerp(target.object3D.quaternion, smoothFactor);
-          smoothContainer.object3D.scale.lerp(target.object3D.scale, smoothFactor);
+        if (targetVisible) {
+          const t = target.object3D;
+          const s = smoothContainer.object3D;
+          t.updateMatrixWorld(true);
+          t.matrixWorld.decompose(tPos, tQuat, tScale);
+
+          if (firstFrame) {
+            s.position.copy(tPos);
+            s.quaternion.copy(tQuat);
+            s.scale.copy(tScale);
+            firstFrame = false;
+          } else {
+            s.position.lerp(tPos, smoothFactor);
+            s.quaternion.slerp(tQuat, smoothFactor);
+            s.scale.lerp(tScale, smoothFactor);
+          }
         }
 
         if (rotateEarth && earth.object3D) {
@@ -144,6 +266,7 @@
 
       animate();
 
+      // ---------- Buttons ----------
       rotateBtn.addEventListener("click", () => {
         rotateEarth = !rotateEarth;
         rotateBtn.innerText = rotateEarth ? "Stop Rotation" : "Rotate Earth";
