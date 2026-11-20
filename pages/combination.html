@@ -74,30 +74,16 @@
             max-height: 70vh;
             max-height: 70dvh;
         }
-
-        /* Optional on-screen debug label (shown with ?debug) */
-        #debugLabel {
-            position: fixed;
-            bottom: 8px;
-            left: 8px;
-            right: 8px;
-            z-index: 50;
-            font: 12px/1.4 monospace;
-            color: #fff;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 6px 8px;
-            border-radius: 6px;
-            word-break: break-all;
-            display: none;
-        }
     </style>
 </head>
 
 <body class="flex justify-center items-center relative">
 
-    <!-- Background Video: WebM first, MP4 fallback -->
+    <!-- Background Video: MP4 (H.264) first for iOS, WebM fallback -->
     <video
         id="bgVideo"
+        data-bg-video
+        poster="../ui/combinations_poster.webp"
         class="background-video"
         autoplay
         muted
@@ -105,8 +91,8 @@
         playsinline
         webkit-playsinline
         preload="auto">
-        <source src="../ui/combinations.webm" type='video/webm; codecs="vp9"' />
-        <source src="../ui/combinat.mp4" type='video/mp4; codecs="avc1.42E01E"' />
+        <source src="../ui/combinations.mp4" type="video/mp4" />
+        <source src="../ui/combinations.webm" type="video/webm" />
         Your browser does not support HTML5 video.
     </video>
 
@@ -126,75 +112,7 @@
         </div>
     </div>
 
-    <div id="debugLabel"></div>
-
 <script>
-// --- 1. Video: autoplay and source check ---
-(function () {
-    const video = document.getElementById("bgVideo");
-    if (!video) return;
-
-    video.muted = true;
-    video.defaultMuted = true;
-    video.loop = true;
-    video.playsInline = true;
-    video.setAttribute("muted", "");
-    video.setAttribute("playsinline", "");
-    video.setAttribute("webkit-playsinline", "");
-
-    function startVideo() {
-        if (!video.paused) return;
-        const p = video.play();
-        if (p && p.catch) p.catch(function () {});
-    }
-
-    // Report which source the browser actually chose
-    function reportSource() {
-        const src = video.currentSrc || "(none)";
-        console.log("Playing source:", src);
-        console.log("canPlayType webm vp9:", video.canPlayType('video/webm; codecs="vp9"') || "no");
-        console.log("canPlayType mp4 h264:", video.canPlayType('video/mp4; codecs="avc1.42E01E"') || "no");
-
-        if (location.search.indexOf("debug") !== -1) {
-            const label = document.getElementById("debugLabel");
-            label.style.display = "block";
-            label.textContent =
-                "Source: " + src +
-                " | webm: " + (video.canPlayType('video/webm; codecs="vp9"') || "no") +
-                " | mp4: " + (video.canPlayType('video/mp4; codecs="avc1.42E01E"') || "no");
-        }
-    }
-
-    // If the WebM downloads but fails to decode, fall back to the MP4
-    video.addEventListener("error", function () {
-        const src = video.currentSrc || "";
-        if (src.indexOf(".webm") !== -1) {
-            console.warn("WebM failed, switching to MP4");
-            video.removeAttribute("src");
-            video.innerHTML = "";
-            video.src = "../ui/combinations.mp4";
-            video.load();
-            startVideo();
-        }
-    }, true);
-
-    video.addEventListener("loadedmetadata", reportSource);
-
-    startVideo();
-    ["loadeddata", "canplay"].forEach(function (ev) {
-        video.addEventListener(ev, startVideo);
-    });
-    window.addEventListener("load", startVideo);
-    window.addEventListener("pageshow", startVideo);
-    document.addEventListener("visibilitychange", function () {
-        if (!document.hidden) startVideo();
-    });
-
-    // Fallback: start on the first touch or click if autoplay was blocked
-    ["touchstart", "pointerdown", "click", "scroll", "keydown"].forEach(function (ev) {
-        window.addEventListener(ev, startVideo, { once: true, passive: true });
-    });
-})();
 
 // --- 2. Menu Items ---
 const combinations = [
@@ -231,5 +149,6 @@ function createMenuItems() {
 createMenuItems();
 </script>
 
+    <script src="../js/video-start.js"></script>
 </body>
 </html>

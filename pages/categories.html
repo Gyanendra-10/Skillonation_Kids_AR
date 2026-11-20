@@ -169,7 +169,9 @@
   <div class="page">
     <!-- Background Video -->
     <video
-      id="bgVideo"
+        id="bgVideo"
+        data-bg-video
+        poster="../ui/Explore_poster.webp"
       class="bg-video"
       autoplay
       muted
@@ -193,32 +195,6 @@
   </div>
 
   <script>
-    /* =================================
-       VIDEO AUTOPLAY & LOOP HANDLER
-    ================================= */
-    document.addEventListener("DOMContentLoaded", function () {
-      const video = document.getElementById("bgVideo");
-      if (video) {
-        video.muted = true;
-        video.defaultMuted = true;
-        video.loop = true;
-        video.playsInline = true;
-
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(function (error) {
-            console.warn("Autoplay deferred until first user interaction:", error);
-            const unlockPlay = function () {
-              video.play();
-              document.removeEventListener("click", unlockPlay);
-              document.removeEventListener("touchstart", unlockPlay);
-            };
-            document.addEventListener("click", unlockPlay, { once: true });
-            document.addEventListener("touchstart", unlockPlay, { once: true });
-          });
-        }
-      }
-    });
 
     /* =================================
        TILE NAVIGATION
@@ -281,5 +257,6 @@
       setTimeout(updateGridFit, 120);
     });
   </script>
+    <script src="../js/video-start.js"></script>
 </body>
 </html>
