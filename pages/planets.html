@@ -56,6 +56,8 @@
     <!-- Background Video (.mp4) -->
     <video
         id="bgVideo"
+        data-bg-video
+        poster="../ui/solarsystem_poster.webp"
         class="background-video"
         autoplay
         muted
@@ -86,27 +88,6 @@
 
     <!-- Script for Dynamic Menu & Autoplay Guarantee -->
     <script>
-        // --- 1. Autoplay Enforcer ---
-        document.addEventListener("DOMContentLoaded", function () {
-            const video = document.getElementById("bgVideo");
-            if (video) {
-                video.muted = true;
-                video.defaultMuted = true;
-                video.loop = true;
-                video.playsInline = true;
-
-                const playPromise = video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(function (error) {
-                        console.warn("Autoplay deferred until user interaction:", error);
-                        const unlockPlay = function () {
-                            video.play();
-                            document.removeEventListener("click", unlockPlay);
-                            document.removeEventListener("touchstart", unlockPlay);
-                        };
-                        document.addEventListener("click", unlockPlay, { once: true });
-                        document.addEventListener("touchstart", unlockPlay, { once: true });
-                    });
                 }
             }
         });
@@ -138,5 +119,6 @@
         createMenuItems();
     </script>
 
+    <script src="../js/video-start.js"></script>
 </body>
 </html>

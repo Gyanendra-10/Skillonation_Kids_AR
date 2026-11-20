@@ -229,6 +229,49 @@
         left: 20px;
       }
     }
+
+    /* =================================
+       TAP TO START LAYER (iOS: video must start from a tap)
+    ================================= */
+    .tap-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      background: rgba(0, 0, 0, 0.55);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.4s ease;
+    }
+
+    .tap-layer.is-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .tap-layer img {
+      width: min(60vw, 320px);
+      height: auto;
+      filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+    }
+
+    .tap-layer span {
+      padding: 14px 30px;
+      border-radius: 30px;
+      background: #fff;
+      color: #000;
+      font: bold 18px Arial, sans-serif;
+      animation: tapPulse 1.6s infinite ease-in-out;
+    }
+
+    @keyframes tapPulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
   </style>
 </head>
 
@@ -264,6 +307,7 @@
   <video
     id="bgVideo"
     class="background-video"
+    data-bg-video="manual"
     poster="ui/welcome_poster.webp"
     autoplay
     muted
@@ -303,63 +347,42 @@
       alt="Skillonation Logo" />
   </a>
 
+  <!-- TAP TO START LAYER -->
+  <div id="tapLayer" class="tap-layer" role="button" tabindex="0" aria-label="Tap to Start">
+    <img src="ui/logo.webp" alt="Skillonation" />
+    <span>Tap to Start</span>
+  </div>
+
   <!-- AUDIO AND AUTOPLAY CONTROLS -->
+  <script src="js/video-start.js"></script>
   <script>
     (function () {
       const video = document.getElementById("bgVideo");
+      const tapLayer = document.getElementById("tapLayer");
       const audioBtn = document.getElementById("audioToggle");
       const iconMuted = document.getElementById("iconMuted");
       const iconPlaying = document.getElementById("iconPlaying");
 
-      // Set autoplay-compatible properties before any play attempt
-      video.muted = true;
-      video.defaultMuted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.volume = 1;
-
-      video.setAttribute("muted", "");
-      video.setAttribute("autoplay", "");
-      video.setAttribute("playsinline", "");
-      video.setAttribute("webkit-playsinline", "");
-
-      // Safe play helper: never throws, only plays if currently paused
-      function startVideo() {
-        if (!video.paused) return;
-        const p = video.play();
-        if (p && p.catch) p.catch(function () {});
+      // Start the video from the tap itself (required by iOS), then reveal the page
+      function startExperience() {
+        BgVideo.play(video);
+        tapLayer.classList.add("is-hidden");
+        setTimeout(function () { tapLayer.remove(); }, 450);
       }
 
-      // Try immediately, then at every stage of loading
-      startVideo();
-
-      ["loadedmetadata", "loadeddata", "canplay", "canplaythrough"].forEach(function (ev) {
-        video.addEventListener(ev, startVideo);
+      tapLayer.addEventListener("click", startExperience, { once: true });
+      tapLayer.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") startExperience();
       });
 
-      window.addEventListener("load", startVideo);
-      window.addEventListener("pageshow", startVideo);
-
-      // Retry when the page returns to the foreground
+      // Resume after back/forward cache or returning to the tab
+      function resume() {
+        if (!tapLayer.isConnected && video.paused) BgVideo.play(video);
+      }
+      window.addEventListener("pageshow", resume);
       document.addEventListener("visibilitychange", function () {
-        if (!document.hidden) startVideo();
+        if (!document.hidden) resume();
       });
-
-      // Fallback: if the browser still blocked autoplay,
-      // start the video on the first interaction of any kind
-      ["touchstart", "pointerdown", "click", "scroll", "keydown"].forEach(function (ev) {
-        window.addEventListener(ev, startVideo, { once: true, passive: true });
-      });
-
-      // Keep retrying briefly in case the browser allows it a moment later
-      let tries = 0;
-      const retryTimer = setInterval(function () {
-        if (!video.paused || ++tries > 20) {
-          clearInterval(retryTimer);
-          return;
-        }
-        startVideo();
-      }, 500);
 
       // Update the audio button UI
       function updateButtonUI() {
@@ -370,7 +393,7 @@
         audioBtn.setAttribute("aria-label", soundOn ? "Mute Audio" : "Enable Audio");
       }
 
-      // Toggle audio on user interaction
+      // Toggle audio on user tap (sound can only be enabled from a tap)
       audioBtn.addEventListener("click", async function (event) {
         event.stopPropagation();
 
